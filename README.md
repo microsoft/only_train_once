@@ -12,8 +12,6 @@ We are hiring a research software engineer to join us develop the next generatio
 
 In the following months, technical report of HESSO optimizer associated with new optimization techniques and tutorials will be released.
 
-This repo will be moved underneath microsoft open-source affiliation once a formal dev team is established. 
-
 ## Publications
 
 Please find our series of works and [bibtexs](https://github.com/tianyic/only_train_once?tab=readme-ov-file#citation) for kind citations. 
