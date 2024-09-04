@@ -1005,6 +1005,7 @@ COMPOSED_MODULES = {
 UNPRUNABLE_BASIC_OPERATORS = [
     'depthtospace',
 ]
+
 UNPRUNABLE_COMPOSED_OPERATORS = [
     'LoraLinearOTO',
     'LoraEmbeddingOTO'
