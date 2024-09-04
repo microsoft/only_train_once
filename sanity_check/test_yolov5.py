@@ -15,11 +15,24 @@ class TestYolov5(unittest.TestCase):
             param.requires_grad = True
 
         oto = OTO(model, dummy_input)
-        oto.mark_unprunable_by_node_ids(
-            ['node-229', 'node-329', 'node-443', 'node-553']
-            # ['node-229', 'node-581', 'node-471', 'node-359']
+        oto.visualize(view=False, out_dir=OUT_DIR, display_params=True)
+        # Mark a conv-concat and the detection heads as unprunable 
+        # The node_ids may be varying upon different torch version. 
+        # oto.mark_unprunable_by_node_ids(
+        #     # ['node-229', 'node-329', 'node-443', 'node-553'] 
+        #     ['node-229', 'node-581', 'node-471', 'node-359']
+        # )
+        # The above can be also achieved by 
+        oto.mark_unprunable_by_param_names(
+            ['model.model.model.9.cv1.conv.weight', 'model.model.model.24.m.2.weight', \
+             'model.model.model.24.m.1.weight', 'model.model.model.24.m.0.weight']
         )
-        oto.visualize(view=False, out_dir=OUT_DIR)
+        
+        # Display param name and shape in dependency graph visualization
+        oto.visualize(view=False, out_dir=OUT_DIR, display_params=True)
+        # Compute FLOP and param for full model. 
+        full_flops = oto.compute_flops(in_million=True)['total']
+        full_num_params = oto.compute_num_params(in_million=True)
 
         optimizer = oto.hesso(
             variant='sgd',

@@ -76,5 +76,3 @@ class Node:
 
     def is_dummy(self):
         return True if self.id == 'dummy_input' or self.id == 'dummy_output' else False
-
-    

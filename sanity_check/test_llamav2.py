@@ -2,23 +2,15 @@ import torch
 from only_train_once import OTO
 import unittest
 import os
-from transformers import LlamaConfig, LlamaTokenizer
+from transformers import LlamaTokenizer
 from backends import LlamaForCausalLM
 
 OUT_DIR = './cache'
 
 class TestLLAMAv2(unittest.TestCase):
     def test_sanity(self, dummy_input=None):
-        # llama_config = LlamaConfig()
-        # llama_config.num_hidden_layers = 4
-        # llama_config.num_attention_heads = 32
-        # llama_config.hidden_size = 4096
-        # llama_config.intermediate_size = 11008
-        # model = LlamaForCausalLM(llama_config)
         model = LlamaForCausalLM.from_pretrained(
             'NousResearch/Llama-2-7b-hf',
-            # 'meta-llama/Llama-2-7b',
-            # use_auth_token='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',
             low_cpu_mem_usage=True
         )
         tokenizer = LlamaTokenizer.from_pretrained('NousResearch/Llama-2-7b-hf')
@@ -34,7 +26,7 @@ class TestLLAMAv2(unittest.TestCase):
 
         oto = OTO(model, dummy_input=(input_data,), strict_out_nodes=True)
 
-        # oto.visualize(view=False, out_dir=OUT_DIR)
+        oto.visualize(view=False, out_dir=OUT_DIR, display_params=True)
         
         oto.random_set_zero_groups()
 

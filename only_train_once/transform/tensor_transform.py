@@ -13,7 +13,7 @@ class TensorTransform(IntEnum):
     TRANSPOSE = 9
     MULTIHEAD_NUMHEAD_SPREAD = 10 # Affect other nodes in the same node group
     REVERSE_MULTIHEAD_NUMHEAD_SPREAD = 11 # Affect other nodes in the same node group
-    
+
     TOTAL = 12
 
 def is_spread_transformation(transformation_type):
@@ -70,7 +70,7 @@ def reverse_multihead_headdim_transformation(tensor, num_groups=1, num_heads=1):
 
 def reverse_multihead_numhead_transformation(tensor, num_groups=1, head_dim=1):
     if tensor.numel() >= num_groups * head_dim:
-        return tensor
+        raise NotImplementedError
     else:
         if len(tensor.shape) == 1:
             return tensor.unsqueeze(1).repeat(1, head_dim).view(num_groups * head_dim, -1).squeeze()

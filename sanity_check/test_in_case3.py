@@ -10,7 +10,7 @@ class TestINCase3(unittest.TestCase):
     def test_sanity(self, dummy_input=torch.rand(1, 3, 32, 32)):
         model = DemoNetInstanceNorm2DCase3()
         oto = OTO(model, dummy_input)
-        
+
         oto.visualize(view=False, out_dir=OUT_DIR)
 
         oto.random_set_zero_groups()

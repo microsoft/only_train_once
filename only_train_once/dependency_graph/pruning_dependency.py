@@ -362,96 +362,26 @@ def build_pruning_dependency_graph(graph):
 
         if len(overwrite_p_transforms) == 1:
             overwrite_p_transform = next(iter(overwrite_p_transforms))
-            if overwrite_p_transform != TensorTransform.MULTIHEAD_NUMHEAD_SPREAD:
-                raise NotImplementedError('Currently only consider spread tensor transformation as multihead_numhead.')
             for node in node_group:
                 if len(node.param_names) == 0 or not node.op or node.id in fixed_node_ids:
                     continue
-                
-                node.op.p_transform = [(
-                        SPREAD_TRANSFORM_MAP[overwrite_p_transform],
-                        {
-                            'num_heads': overwrite_num_groups,
-                            'head_dim': node.op.num_groups // overwrite_num_groups
-                        })]
                 node.op.num_groups = overwrite_num_groups
+                node.op.p_transform = SPREAD_TRANSFORM_MAP[overwrite_p_transform]
             node_group.overwrite_p_transform = overwrite_p_transform
-
         elif len(overwrite_p_transforms) > 1:
             raise NotImplementedError('One node group has two distinct spread_p_transforms.')
 
-    """
     # If one node group is auxiliary, and has group norm with groups > 1
     # We currently mark its dependent node groups as unprunable 
-    """
-    # for node_group in graph.node_groups.values():
-    #     if not node_group.is_auxiliary:
-    #         continue
-    #     fixed_node_ids = set()
-    #     for node in node_group:
-    #         if len(node.param_names) == 0 or not node.op:
-    #             continue
-    #         if type(node.op).__name__ == 'GroupNormOTO':
-    #             if node.op.num_groups > 1:
-    #                 for depend_node_group in node_group.dependent_node_groups:
-    #                     depend_node_group.is_prunable = False
-
     for node_group in graph.node_groups.values():
         if not node_group.is_auxiliary:
             continue
-        
-        num_dependent_node_groups = len(node_group.dependent_node_groups)
-        overwritten_num_groups = node_group.num_groups // num_dependent_node_groups
+        fixed_node_ids = set()
 
-        if node_group.contain_op('GroupNormOTO') and node_group.num_groups > 1:
-            visited = set()
-            visited_modules = set()
-            for depend_node_group in node_group.dependent_node_groups:
-                is_break_dependency = False
-                for param_name in depend_node_group.param_names:
-                    if 'break_dep_1x1s' in param_name:
-                        is_break_dependency = True
-                if is_break_dependency:
-                    depend_node_group.is_prunable = False
-                    continue
-
-                modify_dependent_node_group = False
-                if depend_node_group.num_groups // node_group.num_groups >= 1 and \
-                   depend_node_group.num_groups % node_group.num_groups == 0 and \
-                   depend_node_group.num_groups // num_dependent_node_groups > 1 and \
-                   depend_node_group.num_groups % num_dependent_node_groups == 0 and \
-                   len(node_group.param_names) > 0 and \
-                   depend_node_group.num_groups != overwritten_num_groups:
-                    modify_dependent_node_group = True
-            
-                if depend_node_group.id in visited or not modify_dependent_node_group:
-                    continue
-
-                for node in depend_node_group.nodes.values():
-                    if len(node.param_names) == 0 or not node.op or node.op.module in visited_modules:
-                        continue
-                    if not (node.op.p_transform == TensorTransform.MULTIHEAD_NUMHEAD or \
-                       node.op.p_transform == TensorTransform.MULTIHEAD_NUMHEAD_SPREAD or \
-                        isinstance(node.op.p_transform, list)):
-                        node.op.p_transform = [(
-                            TensorTransform.MULTIHEAD_NUMHEAD,
-                            {
-                                'num_heads': node_group.num_groups,
-                                'head_dim': node.op.num_groups // node_group.num_groups
-                            })]
-                        node.op.num_groups = node_group.num_groups
-                    if not isinstance(node.op.p_transform, list):
-                        node.op.p_transform = [
-                            (node.op.p_transform, {'num_heads': node.op.num_groups, 'head_dim': node.op.head_dim})
-                        ]
-                    node.op.p_transform.append((
-                            TensorTransform.MULTIHEAD_NUMHEAD, 
-                            {
-                                'num_heads': overwritten_num_groups,
-                                'head_dim': node.op.num_groups // overwritten_num_groups,
-                            }))
-                    overwrite_p_transform = node.op.p_transform
-                    node.op.num_groups = overwritten_num_groups
-                    visited_modules.add(node.op.module)
-                depend_node_group.overwrite_p_transform = overwrite_p_transform
-                visited.add(depend_node_group.id)
+        for node in node_group:
+            if len(node.param_names) == 0 or not node.op:
+                continue
+            if type(node.op).__name__ == 'GroupNormOTO':
+                if node.op.num_groups > 1:
+                    for depend_node_group in node_group.dependent_node_groups:
+                        depend_node_group.is_prunable = False

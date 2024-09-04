@@ -2,8 +2,7 @@ import torch
 from only_train_once import OTO
 import unittest
 import os
-from transformers import AutoConfig, AutoModelForQuestionAnswering, AutoTokenizer
-from transformers import BertConfig, BertModel
+from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 
 OUT_DIR = './cache'
 
@@ -27,7 +26,6 @@ class TestBert(unittest.TestCase):
         oto.mark_unprunable_by_node_ids(['node-218'])
 
         oto.visualize(view=False, out_dir=OUT_DIR)
-        # oto.random_set_zero_groups(target_group_sparsity=0.1)
         oto.random_set_zero_groups(target_group_sparsity=0.9)
 
         oto.construct_subnet(
@@ -42,7 +40,7 @@ class TestBert(unittest.TestCase):
 
         text_2 = 'This is a good test sentence of a pretty short string and wording that is used to test dolly model.' * 7
         input_data_2 = tokenizer(text_2, return_tensors='pt').input_ids
-        
+
         full_model = torch.load(oto.full_group_sparse_model_path)
         compressed_model = torch.load(oto.compressed_model_path)
         full_output_1 = full_model(input_data_1.to(full_model.device))
@@ -54,10 +52,6 @@ class TestBert(unittest.TestCase):
         max_output_diff_3 = torch.max(full_output_1[0] - compressed_output_2[0]).item()
         max_output_diff_4 = torch.max(full_output_2[0] - compressed_output_1[0]).item()
 
-        # max_output_diff_1 = torch.max(full_output_1.logits - compressed_output_1.logits).item()
-        # max_output_diff_2 = torch.max(full_output_2.logits - compressed_output_2.logits).item()
-        # max_output_diff_3 = torch.max(full_output_1.logits - compressed_output_2.logits).item()
-        # max_output_diff_4 = torch.max(full_output_2.logits - compressed_output_1.logits).item()
         print("Maximum output difference under the same inputs:")
         print(max_output_diff_1)
 

@@ -19,7 +19,7 @@ class TestConvNextTiny(unittest.TestCase):
         # oto.mark_unprunable_by_node_ids(['node-183', 'node-312', 'node-422', 'node-712'])
 
         oto.visualize(view=False, out_dir=OUT_DIR)
-        # For test FLOP and param reductions. 
+        # Compute FLOP and param for full model. 
         full_flops = oto.compute_flops(in_million=True)['total']
         full_num_params = oto.compute_num_params(in_million=True)
 

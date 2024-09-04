@@ -18,6 +18,7 @@ def calculate_importance_score(criteria, param_group):
             elif 'taylor_second_order' == cri_name:
                 importance_score_by_second_order_taylor(param_group)
 
+
 def calculate_importance_score_lora(criteria, param_group, global_params):
     param_group['importance_scores'] = dict()
     with torch.no_grad():

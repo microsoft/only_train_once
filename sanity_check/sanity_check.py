@@ -9,7 +9,7 @@ sys.path.append(parentdir)
 LLM Test Cases
 """
 from test_llama_embed_lora import TestLLAMAEmbedLoRA
-# from test_llamav2 import TestLLAMAv2 # full 32 layers
+from test_llamav2 import TestLLAMAv2 # full 32 layers
 from test_llamav1 import TestLLAMAv1
 from test_llamav1_lora import TestLLAMAv1LoRA
 from test_bert import TestBert
@@ -48,9 +48,6 @@ from test_diffmodel_bedroom import TestDiffModelBedroom
 from test_diffmodel_celeba import TestDiffModelCeleba
 from test_diffmodel_church import TestDiffModelChurch
 
-from test_diffmodel_debug import TestDiffModelDebug
-
-# from test_sam import TestSam
 
 OUT_DIR = './cache'
 

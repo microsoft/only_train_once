@@ -33,7 +33,6 @@ class TestResNet18(unittest.TestCase):
         print("Size of full model     : ", full_model_size.st_size / (1024 ** 3), "GBs")
         print("Size of compress model : ", compressed_model_size.st_size / (1024 ** 3), "GBs")
 
-
         # For test FLOP and param reductions. 
         oto_compressed = OTO(compressed_model, dummy_input)
         compressed_flops = oto_compressed.compute_flops(in_million=True)['total']

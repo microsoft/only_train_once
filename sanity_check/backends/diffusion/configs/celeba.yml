@@ -22,7 +22,6 @@ model:
     ema_rate: 0.9999
     ema: True
     resamp_with_conv: True
-    break_dep_1x1s: {'4-2': [512, 256], '3-0': [512, 256], '1-2': [256, 128], '0-0': [256, 128]}
 
 diffusion:
     beta_schedule: linear

@@ -10,7 +10,7 @@ class TestConvTransposeInCase2(unittest.TestCase):
     def test_sanity(self, dummy_input=torch.rand(1, 3, 32, 32)):
         model = DemoNetConvtransposeInCase2()
         oto = OTO(model, dummy_input)
-        
+
         oto.visualize(view=False, out_dir=OUT_DIR)
 
         oto.random_set_zero_groups()

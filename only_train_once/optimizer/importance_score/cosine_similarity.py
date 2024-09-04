@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 from only_train_once.transform import tensor_transformation, TensorTransform
 
 LORA_NAMES = [('lora_B', 'lora_A'), ('lora_embedding_B', 'lora_embedding_A')]
@@ -13,13 +12,21 @@ def importance_score_by_cosine_similarity(param_group):
         if p_name not in param_group['grad_variant']:
             continue
         grad = param_group['grad_variant'][p_name]
-        param_transform = tensor_transformation(param, p_transform, param_group['num_groups'])
+        param_transform = None
+        if p_transform == TensorTransform.MULTIHEAD_HEADDIM:
+            param_transform = tensor_transformation(param, p_transform, param_group['num_groups'], param_group['num_heads'])
+        else:
+            param_transform = tensor_transformation(param, p_transform, param_group['num_groups'])
         if norm_params == None:
             norm_params = torch.norm(param_transform, dim=1) ** 2
         else:
             norm_params += torch.norm(param_transform, dim=1) ** 2
 
-        grad_transform = tensor_transformation(grad, p_transform, param_group['num_groups'])
+        grad_transform = None
+        if p_transform == TensorTransform.MULTIHEAD_HEADDIM:
+            grad_transform = tensor_transformation(grad, p_transform, param_group['num_groups'], param_group['num_heads'])
+        else:
+            grad_transform = tensor_transformation(grad, p_transform, param_group['num_groups'])
         if norm_grads == None:
             norm_grads = torch.norm(grad_transform, dim=1) ** 2
         else:
@@ -33,6 +40,7 @@ def importance_score_by_cosine_similarity(param_group):
     norm_params = torch.sqrt(norm_params)
     norm_grads = torch.sqrt(norm_grads)
     param_group['importance_scores']['cosine_similarity'] = params_grads_inner_prod / (norm_params + 1e-8) / (norm_grads + 1e-8) + 1
+
 
 def importance_score_by_cosine_similarity_lora(param_group, global_params):
     norm_params = None

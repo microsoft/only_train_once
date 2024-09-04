@@ -11,6 +11,7 @@ class TestDiffModelCIFAR(unittest.TestCase):
         model = DiffModelCIFAR()
 
         oto = OTO(model, dummy_input)
+        # The layout rendering of DiffUnet is out-of-time via graphviz
         # oto.visualize(view=False, out_dir=OUT_DIR, display_params=True)
         oto.random_set_zero_groups()
 

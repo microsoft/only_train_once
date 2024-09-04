@@ -102,7 +102,7 @@ class ResnetBlock(nn.Module):
                                      kernel_size=3,
                                      stride=1,
                                      padding=1)
-        
+
         if self.in_channels != self.out_channels:
             if self.use_conv_shortcut:
                 self.conv_shortcut = torch.nn.Conv2d(in_channels,
@@ -303,16 +303,6 @@ class DiffModel(nn.Module):
                                         stride=1,
                                         padding=1)
 
-        self.config.model.break_dep_1x1s = self.config.model.break_dep_1x1s.__dict__
-        self.break_dep_1x1s = nn.ModuleDict()
-        for path_key in self.config.model.break_dep_1x1s:
-            num_channels = self.config.model.break_dep_1x1s[path_key]
-            self.break_dep_1x1s[path_key] = nn.ModuleList()
-            for num_channel in num_channels:
-                self.break_dep_1x1s[path_key].append(
-                    torch.nn.Conv2d(num_channel, num_channel, kernel_size=1, stride=1, padding=0, bias=False)
-                )
-
     def forward(self, concat):
         x = concat[:, :self.in_channels]
         t = concat[:, self.in_channels:, 0, 0].squeeze(1)
@@ -344,17 +334,8 @@ class DiffModel(nn.Module):
         # upsampling
         for i_level in reversed(range(self.num_resolutions)):
             for i_block in range(self.num_res_blocks+1):
-                hs_tensor = hs.pop()
-                module_key = str(i_level) + '-' + str(i_block)
-                if module_key not in self.break_dep_1x1s:
-                    h = self.up[i_level].block[i_block](    
-                        torch.cat([h, hs_tensor], dim=1), temb)
-                else:
-                    h = self.up[i_level].block[i_block](    
-                        torch.cat([
-                            self.break_dep_1x1s[module_key][0](h), 
-                            self.break_dep_1x1s[module_key][1](hs_tensor)
-                        ], dim=1), temb)
+                h = self.up[i_level].block[i_block](
+                    torch.cat([h, hs.pop()], dim=1), temb)
                 if len(self.up[i_level].attn) > 0:
                     h = self.up[i_level].attn[i_block](h)
             if i_level != 0:
@@ -364,7 +345,6 @@ class DiffModel(nn.Module):
         h = self.norm_out(h)
         h = nonlinearity(h)
         h = self.conv_out(h)
-
         return h
 
 def dict2namespace(config):
@@ -397,12 +377,6 @@ def DiffModelCeleba():
 
 def DiffModelChurch():
     with open('sanity_check/backends/diffusion/configs/church.yml', 'r') as f:
-        config = yaml.safe_load(f)
-    new_config = dict2namespace(config)
-    return DiffModel(new_config)
-
-def DiffModelDebug():
-    with open('sanity_check/backends/diffusion/configs/debug.yml', 'r') as f:
         config = yaml.safe_load(f)
     new_config = dict2namespace(config)
     return DiffModel(new_config)

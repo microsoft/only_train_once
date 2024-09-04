@@ -1,7 +1,6 @@
 import torch
-import torch.nn as nn
 from only_train_once.transform import TensorTransform
-from abc import ABC, abstractclassmethod
+from abc import ABC
 
 class BasicOperator(ABC):
     def __init__(self, id=None, _type=None, cfg_params=dict()):
@@ -15,7 +14,6 @@ class BasicOperator(ABC):
             'in_dim': False
         }
     
-    @abstractclassmethod
     def get_param_groups(self):
         raise NotImplementedError
     
@@ -24,6 +22,7 @@ class BasicOperator(ABC):
         if param.grad is not None:
             pruned_param.grad = torch.index_select(param.grad, dim, torch.LongTensor(preserved_idxes).to(param.device))
         return pruned_param.to(param.device)
+
 
 class Operator(BasicOperator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
@@ -128,12 +127,6 @@ class Operator(BasicOperator):
         return num_params
 
 
-    # def __hash__(self):
-    #     pass
-
-    # def __eq__(self, other_op):
-    #     return self.module == other_op.module
-    
 class ParamOTO(Operator):
     '''
     Operator for the tensor parameters in torch yet not formed in nn.Module 
@@ -216,7 +209,8 @@ class Conv2dOTO(Operator):
         if 'group' in self.cfg_params:
             flops /= self.cfg_params['group']
         return flops
-    
+
+
 class ConvTranspose2dOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -266,7 +260,8 @@ class ConvTranspose2dOTO(Operator):
             self.module.weight = self.prune_param_and_grad(self.module.weight, preserved_idxes, 1)
         else:
             self.module.weight = self.prune_param_and_grad(self.module.weight, preserved_idxes, 0)
-            
+
+
 class BatchNormOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -297,6 +292,7 @@ class BatchNormOTO(Operator):
             self.module.weight = self.prune_param_and_grad(self.module.weight, preserved_idxes, 0)
             self.module.bias = self.prune_param_and_grad(self.module.bias, preserved_idxes, 0)
 
+
 class InstanceNormOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -323,6 +319,7 @@ class InstanceNormOTO(Operator):
         if self.module.affine:
             self.module.weight = self.prune_param_and_grad(self.module.weight, preserved_idxes, 0)
             self.module.bias = self.prune_param_and_grad(self.module.bias, preserved_idxes, 0)
+
 
 class GroupNormOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
@@ -357,6 +354,7 @@ class GroupNormOTO(Operator):
         if self.module.affine:
             self.module.weight = self.prune_param_and_grad(self.module.weight, preserved_idxes, 0)
             self.module.bias = self.prune_param_and_grad(self.module.bias, preserved_idxes, 0)
+
 
 class LinearOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
@@ -400,6 +398,7 @@ class LinearOTO(Operator):
         flops *= self.module.out_features
         return flops
 
+
 class LoraLinearOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -429,8 +428,7 @@ class LoraLinearOTO(Operator):
                 else:
                     param_groups['p_transform'].append(TensorTransform.BASIC)
         return param_groups
-        
-        
+
     def prune_out_dim(self, pruned_idxes=list(), param_names=list(), skip_output_node=False, **kwargs):  
         # If param_names are provided, pruned by names.
         target_param_names = param_names if len(param_names) > 0 else self.name_to_param
@@ -471,6 +469,7 @@ class LoraLinearOTO(Operator):
                     self.name_to_param[param_name] = module.weight
                     module.in_features = len(preserved_idxes)
                 self.module.in_features = len(preserved_idxes)
+
 
 class LoraEmbeddingOTO(Operator):
     '''
@@ -525,6 +524,7 @@ class LoraEmbeddingOTO(Operator):
                     self.name_to_param[param_name] = module_param
                 self.module.embedding_dim = len(preserved_idxes)
 
+
 class EmbeddingOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -551,7 +551,8 @@ class EmbeddingOTO(Operator):
         preserved_idxes.sort()
         self.module.embedding_dim = self.module.embedding_dim - len(pruned_idxes)
         self.module.weight = self.prune_param_and_grad(self.module.weight, preserved_idxes, 1)
-    
+
+
 class LayerNormOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -579,6 +580,7 @@ class LayerNormOTO(Operator):
             self.module.bias = self.prune_param_and_grad(self.module.bias, preserved_idxes, 0)
         if hasattr(self.module, 'normalized_shape'):
             self.module.normalized_shape = tuple((len(preserved_idxes),))
+
 
 class ConditionOperatorOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
@@ -636,6 +638,7 @@ class ConditionOperatorOTO(Operator):
                     if leaf_op.id not in visited_ops:
                         leaf_op.prune_in_dim(pruned_idxes, param_names=[param_name])
                     visited_ops.add(leaf_op.id)
+
 
 class BaseMultiHeadAttentionOTO(Operator):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
@@ -773,6 +776,7 @@ class BaseMultiHeadAttentionOTO(Operator):
                     leaf_op.prune_in_dim(pruned_idxes, param_names=[param_name])
                 visited_modules.add(module_name)
 
+
 class LlamaAttentionOTO(BaseMultiHeadAttentionOTO):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -805,7 +809,8 @@ class LlamaAttentionOTO(BaseMultiHeadAttentionOTO):
                 for h in range(self.num_heads):
                     expand_pruned_idxes.extend([i + h * self.head_dim for i in pruned_idxes])
                 leaf_op.prune_out_dim(expand_pruned_idxes)
-                
+
+
 class BertAttentionOTO(BaseMultiHeadAttentionOTO):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -875,7 +880,8 @@ class BertAttentionOTO(BaseMultiHeadAttentionOTO):
                     for h in range(self.head_dim):
                         expand_pruned_idxes.append(h + i * self.head_dim)
                 leaf_op.prune_out_dim(expand_pruned_idxes)
-                
+
+
 class PhiAttentionOTO(BaseMultiHeadAttentionOTO):
     def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
         super().__init__(id, _type, cfg_params, module)
@@ -941,15 +947,6 @@ class PhiAttentionOTO(BaseMultiHeadAttentionOTO):
                     expand_pruned_idxes.extend([i + h * self.head_dim for i in pruned_idxes])
                 leaf_op.prune_out_dim(expand_pruned_idxes)
 
-class SamVisionAttentionOTO(Operator):
-    def __init__(self, id=None, _type=None, cfg_params=dict(), module=None):
-        super().__init__(id, _type, cfg_params, module)
-        self.is_stem = True
-        self.is_basic = False
-        # self.out_key = 'out_proj'
-        # self.op_name = 'phi_attention'
-        # self.set_attributes()
-
 
 class PReLUOTO(Operator):
     def init(self, id=None, _type=None, cfg_params=dict(), module=None):
@@ -977,21 +974,17 @@ class PReLUOTO(Operator):
         self.module.weight = self.prune_param_and_grad(self.module.weight, preserved_idxes, 0)
         self.module.num_parameters = self.module.num_parameters - len(pruned_idxes)
 
+
 BASIC_MODULES = {
     'ConvTranspose2d': ConvTranspose2dOTO,
     'Conv2d': Conv2dOTO,
-    'ModulatedConv2d': Conv2dOTO, # For stagelightv2
-    'EqualLinear': LinearOTO, # For stagelightv2
     'Linear': LinearOTO,
     'BatchNorm2d': BatchNormOTO,
     'InstanceNorm2d': InstanceNormOTO,
     'GroupNorm': GroupNormOTO,
     'Embedding': EmbeddingOTO,
-    
     'LlamaRMSNorm': LayerNormOTO,
-    'LayerNorm': LayerNormOTO,
-    'SamLayerNorm': LayerNormOTO,
-    
+    'LayerNorm': LayerNormOTO,    
     'PReLU': PReLUOTO,
 }
 
@@ -1001,12 +994,10 @@ COMPOSED_MODULES = {
     'SelfAttention': BaseMultiHeadAttentionOTO,
     'BertAttention': BertAttentionOTO,
     'PhiMHA': PhiAttentionOTO,
-    'SamVisionAttention': SamVisionAttentionOTO,
     'LoraLinear': LoraLinearOTO,
     'LoraEmbedding': LoraEmbeddingOTO,
-
-    # Teleprompter 
-    'ConditionOperator': ConditionOperatorOTO
+    'ConditionOperator': ConditionOperatorOTO,
+    'LoraEmbedding': LoraEmbeddingOTO,
 }
 
 # Unsupported e=yet or unprunable Operators

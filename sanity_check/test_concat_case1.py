@@ -11,7 +11,7 @@ class TestDemoNetConcatCase1(unittest.TestCase):
         model = DemoNetConcatCase1()
         oto = OTO(model, dummy_input)
         oto.visualize(view=False, out_dir=OUT_DIR)
-        # For test FLOP and param reductions. 
+        # Compute FLOP and param for full model. 
         full_flops = oto.compute_flops(in_million=True)['total']
         full_num_params = oto.compute_num_params(in_million=True)
 

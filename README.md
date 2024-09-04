@@ -4,13 +4,8 @@
 
 ![oto_overview](https://github.com/tianyic/only_train_once/assets/8930611/131bd6ba-3f94-4b46-8398-074ae311ccf0)
 
-This repository is the Pytorch implementation of **Only-Train-Once** (**OTO**). OTO is an $\color{LimeGreen}{\textbf{automatic}}$, $\color{LightCoral}{\textbf{architecture}}$ $\color{LightCoral}{\textbf{agnostic}}$ DNN $\color{Orange}{\textbf{training}}$ and $\color{Violet}{\textbf{compression}}$ (via $\color{CornflowerBlue}{\textbf{structure pruning}}$ and $\color{DarkGoldenRod}{\textbf{erasing}}$ operators) framework. By OTO, users could train a general DNN either from scratch or a pretrained checkpoint to achieve both high performance and slimmer architecture simultaneously in the one-shot manner (without fine-tuning). 
+This repository is the (deprecated) Pytorch implementation of **Only-Train-Once** (**OTO**). OTO is an $\color{LimeGreen}{\textbf{automatic}}$, $\color{LightCoral}{\textbf{architecture}}$ $\color{LightCoral}{\textbf{agnostic}}$ DNN $\color{Orange}{\textbf{training}}$ and $\color{Violet}{\textbf{compression}}$ (via $\color{CornflowerBlue}{\textbf{structure pruning}}$ and $\color{DarkGoldenRod}{\textbf{erasing}}$ operators) framework. By OTO, users could train a general DNN either from scratch or a pretrained checkpoint to achieve both high performance and slimmer architecture simultaneously in the one-shot manner (without fine-tuning). 
 
-## Note! We are hiring.
-
-We are hiring a research software engineer to join us develop the next generation OTO framework. Here is the [job description](https://jobs.careers.microsoft.com/global/en/job/1681977/Research-Software-Engineer-II). We encourage candidates with proper backgrounds to apply it. 
-
-In the following months, technical report of HESSO optimizer associated with new optimization techniques and tutorials will be released.
 
 ## Publications
 
@@ -27,7 +22,9 @@ Please find our series of works and [bibtexs](https://github.com/tianyic/only_tr
 In addition, we recommend our following efficient ML works. 
 
 - [DREAM: Diffusion Rectification and Estimation-Adaptive Models](https://www.tianyuding.com/projects/DREAM/), efficient diffusion training, in **CVPR 2024**.
-- [DISTILLM: Towards Streamlined Distillation for Large Language Models](https://arxiv.org/pdf/2402.03898.pdf), LLM distillation, preprint.
+- [DISTILLM: Towards Streamlined Distillation for Large Language Models](https://arxiv.org/pdf/2402.03898.pdf), LLM distillation, in **ICML 2024**.
+
+**Note, we will release the report of HESSO optimizer this June.** Thanks for the interest and support from our community. 
 
 ## Installation
 
@@ -82,6 +79,8 @@ oto.construct_subnet(out_dir='./')
 
 - **Pruning Zero-Invariant Group Partition.** OTO at first automatically figures out the dependancy inside the target DNN to build a pruning dependency graph. Then OTO partitions DNN's trainable variables into so-called Pruning Zero-Invariant Groups (PZIGs). PZIG describes a class of pruning minimally removal structure of DNN, or can be largely interpreted as the minimal group of variables that must be pruned together.
 ![zig_partition](https://user-images.githubusercontent.com/8930611/224582957-d3955a50-2abc-44b7-b134-1ba0075ca85f.gif)
+<!-- ![demonet_dependency_graph_prune](https://github.com/tianyic/only_train_once/assets/8930611/f1100163-4735-4801-a6ed-ccfc326644c6)
+![pzigs](https://github.com/tianyic/only_train_once/assets/8930611/b095643c-cb07-4f17-bbbc-c245f2c0cbb4) -->
 
 
 - **Hybrid Structured Sparse Optimizer.** A structured sparsity optimization problem is formulated. A hybrid structured sparse optimizer, including HESSO, DHSPG, LSHPG, is then employed to find out which PZIGs are redundant, and which PZIGs are important for the model prediction. The selected hybrid optimizer explores group sparsity more reliably and typically achieves higher generalization performance than other sparse optimizers.

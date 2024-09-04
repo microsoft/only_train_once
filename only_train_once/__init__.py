@@ -1,7 +1,5 @@
-import imp
 from .graph import Graph
 from .dependency_graph import build_pruning_dependency_graph
-from .optimizer import DHSPG, LHSPG, HESSO, LORACRIC, LORAHYBRIDOPT, HESSOCRIC
 from .subnet_construction import automated_pruning_compression
 import os
 
@@ -39,16 +37,17 @@ class OTO:
     def partition_pzigs(self):
         build_pruning_dependency_graph(self._graph)
 
-    def visualize(self, out_dir=None, view=False, vertical=True, by_node_groups=True, display_params=False, display_flops=False):
-        self._graph.build_dot(vertical=vertical, by_node_groups=by_node_groups, display_params=display_params, display_flops=display_flops).render(\
+    def visualize(self, out_dir=None, view=False, vertical=True, by_node_groups=True, display_params=False):
+        self._graph.build_dot(vertical=vertical, by_node_groups=by_node_groups, display_params=display_params).render(\
             os.path.join(out_dir if out_dir is not None else './', \
-                self._model.name if hasattr(self._model, 'name') else type(self._model).__name__ + '_zig.gv'), \
+                self._model.name if hasattr(self._model, 'name') else type(self._model).__name__ + '_pruning_dependency'), \
                 view=view)
 
     def hesso(self, lr=0.1, weight_decay=None, first_momentum=None, second_momentum=None, \
                variant='sgd', target_group_sparsity=0.5, start_pruning_step=0, \
-               pruning_steps=1, pruning_periods=1, \
+               pruning_steps=1, pruning_periods=1, device='cuda',\
                dampening=None, group_divisible=1, fixed_zero_groups=True, importance_score_criteria='default'):
+        from .optimizer import HESSO
         self._optimizer = HESSO(
             params=self._graph.get_param_groups(),
             lr=lr,
@@ -62,7 +61,8 @@ class OTO:
             pruning_periods=pruning_periods,
             pruning_steps=pruning_steps,
             group_divisible=group_divisible,
-            importance_score_criteria=importance_score_criteria
+            importance_score_criteria=importance_score_criteria, 
+            device=device
         )
         return self._optimizer
 
@@ -70,6 +70,7 @@ class OTO:
                variant='sgd', target_group_sparsity=0.5, tolerance_group_sparsity=0.01, start_pruning_step=0, \
                pruning_steps=1, pruning_periods=1, device='cuda', \
                dampening=None, group_divisible=1, fixed_zero_groups=True, importance_score_criteria='default'):
+        from .optimizer import DHSPG
         self._optimizer = DHSPG(
             params=self._graph.get_param_groups(),
             lr=lr,
@@ -92,9 +93,9 @@ class OTO:
 
     def lhspg(self, lr=0.1, epsilon=0.0, weight_decay=None, first_momentum=None, second_momentum=None, \
                variant='sgd', target_group_sparsity=0.5, tolerance_group_sparsity=0.01, start_pruning_step=0, \
-               pruning_steps=1, pruning_periods=1, dampening=None, group_divisible=1, fixed_zero_groups=True, \
-               lora_update_freq=4, importance_score_criteria=None):
-
+               pruning_steps=1, pruning_periods=1, device='cuda', \
+               dampening=None, group_divisible=1, fixed_zero_groups=True, lora_update_freq=4, importance_score_criteria=None):
+        from .optimizer import LHSPG
         self._optimizer = LHSPG(
             params=self._graph.get_param_groups(),
             lr=lr,
@@ -111,72 +112,8 @@ class OTO:
             group_divisible=group_divisible,
             fixed_zero_groups=fixed_zero_groups,
             importance_score_criteria=importance_score_criteria, 
+            device=device,
             lora_update_freq=lora_update_freq
-        )
-        return self._optimizer
-
-    def hessocric(self, lr=0.1, weight_decay=None, first_momentum=None, second_momentum=None, \
-               variant='sgd', target_group_sparsity=0.5, start_cric_step=0, hybrid_training_steps=0,\
-               sampling_steps=1, max_cycle_period=1, tolerance=0, \
-               dampening=None, importance_score_criteria=None):
-
-        self._optimizer = HESSOCRIC(
-            params=self._graph.get_param_groups(),
-            lr=lr,
-            weight_decay=weight_decay,
-            first_momentum=first_momentum,
-            second_momentum=second_momentum,
-            dampening=dampening,
-            variant=variant,
-            tolerance=tolerance,
-            target_group_sparsity=target_group_sparsity, 
-            start_cric_step=start_cric_step,
-            max_cycle_period=max_cycle_period,
-            sampling_steps=sampling_steps,
-            hybrid_training_steps=hybrid_training_steps,
-            importance_score_criteria=importance_score_criteria, 
-        )
-        return self._optimizer
-    
-    def loracric(self, lr=0.1, weight_decay=None, first_momentum=None, second_momentum=None, \
-               variant='sgd', target_group_sparsity=0.5, start_sampling_step=0, \
-               sampling_steps=1, sampling_periods=1, tolerance=0, \
-               dampening=None, lora_update_freq=4, importance_score_criteria=None):
-
-        self._optimizer = LORACRIC(
-            params=self._graph.get_param_groups(),
-            lr=lr,
-            weight_decay=weight_decay,
-            first_momentum=first_momentum,
-            second_momentum=second_momentum,
-            dampening=dampening,
-            variant=variant,
-            tolerance=tolerance,
-            target_group_sparsity=target_group_sparsity, 
-            start_sampling_step=start_sampling_step,
-            sampling_periods=sampling_periods,
-            sampling_steps=sampling_steps,
-            importance_score_criteria=importance_score_criteria, 
-            lora_update_freq=lora_update_freq
-        )
-        return self._optimizer
-
-    def lorahybridopt(self, lr=0.1, weight_decay=None, first_momentum=None, second_momentum=None, \
-               variant='sgd', warm_up_steps=0, training_steps=10, \
-               redundant_group_idxes=dict(), \
-               dampening=None):
-        
-        self._optimizer = LORAHYBRIDOPT(
-            params=self._graph.get_param_groups(),
-            lr=lr,
-            weight_decay=weight_decay,
-            first_momentum=first_momentum,
-            second_momentum=second_momentum,
-            dampening=dampening,
-            variant=variant,
-            warm_up_steps=warm_up_steps,
-            training_steps=training_steps,
-            redundant_group_idxes=redundant_group_idxes
         )
         return self._optimizer
     
@@ -224,7 +161,7 @@ class OTO:
         for node_group in self._graph.node_groups.values():
             if set(node_group.param_names) & param_names_set:
                 node_group.is_prunable = False
-            
+
     def compute_flops(self, in_million=True, in_billion=False):
         return self._graph.compute_flops(in_million=in_million, in_billion=in_billion)
     

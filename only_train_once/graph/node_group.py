@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod
+from abc import ABC
 import torch
 from only_train_once.transform import tensor_transformation, TensorTransform, index_transformation
 import numpy as np
@@ -51,8 +51,7 @@ class BasicNodeGroup(ABC):
     def remove_node(self, node):
         if node.id in self.nodes:
             del self.nodes[node.id]
-    
-    @abstractclassmethod
+
     def get_param_groups(self):
         raise NotImplementedError
 
@@ -95,7 +94,8 @@ class BasicNodeGroup(ABC):
 
     def merge(self, node_group):
         self.add_nodes(node_group.nodes.values())
-        
+
+
 class NodeGroup(BasicNodeGroup):
     def __init__(self, is_prunable=True):
         super().__init__(is_prunable)
@@ -222,12 +222,7 @@ class NodeGroup(BasicNodeGroup):
                     continue
                 pruning_redundant_idxes.append(dependent_node_group.pruning_redundant_idxes + offset)
                 offset += (dependent_node_group.pruning_important_idxes.size + dependent_node_group.pruning_redundant_idxes.size)
-            if len(pruning_redundant_idxes) > 0:
-                self.pruning_redundant_idxes = np.concatenate(pruning_redundant_idxes)
-            else:
-                self.pruning_redundant_idxes = list()
             self.pruning_important_idxes = list()
-
 
     def prune_out_dim(self, global_skip_modules=set()):
         local_skip_modules=set()    
@@ -284,7 +279,8 @@ class NodeGroup(BasicNodeGroup):
         else:
             self.is_auxiliary = False
             return False
-        
+
+
 class NodeGroupComposedOp(BasicNodeGroup):
     """
     NodeGroupComposedOp refers to the node group for a composed operator

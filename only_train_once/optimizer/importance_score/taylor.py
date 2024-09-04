@@ -29,6 +29,7 @@ def importance_score_by_first_order_taylor(param_group):
             params_grads_inner_prod += torch.sum(param_transform * grad_transform, dim=1)
     param_group['importance_scores']['taylor_first_order'] = torch.abs(params_grads_inner_prod)
 
+
 def importance_score_by_second_order_taylor(param_group):
     if 'taylor_first_order' in param_group['importance_scores']:
         param_group['importance_scores']['taylor_second_order'] = 0.5 * param_group['importance_scores']['taylor_first_order'] ** 2
@@ -57,7 +58,8 @@ def importance_score_by_second_order_taylor(param_group):
         else:
             params_grads_inner_prod += torch.sum(param_transform * grad_transform, dim=1)
     param_group['importance_scores']['taylor_second_order'] = 0.5 * params_grads_inner_prod ** 2
-    
+
+
 def importance_score_by_first_order_taylor_lora(param_group, global_params):
     params_grads_inner_prod = None
     for p_name, param, p_transform in zip(param_group['p_names'], param_group['params'], param_group['p_transform']):
@@ -88,7 +90,8 @@ def importance_score_by_first_order_taylor_lora(param_group, global_params):
                     params_grads_inner_prod += torch.sum(param_transform * grad_transform, dim=1)
                     
     param_group['importance_scores']['taylor_first_order'] = torch.abs(params_grads_inner_prod)
-    
+
+
 def importance_score_by_second_order_taylor_lora(param_group, global_params):
     if 'taylor_first_order' in param_group['importance_scores']:
         param_group['importance_scores']['taylor_second_order'] = 0.5 * param_group['importance_scores']['taylor_first_order'] ** 2

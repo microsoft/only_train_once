@@ -3,6 +3,7 @@ from only_train_once.transform import tensor_transformation, TensorTransform
 
 LORA_NAMES = ['lora_B', 'lora_A', 'lora_embedding_B', 'lora_embedding_A']
 
+
 def importance_score_by_magnitude(param_group):
     norm_group = None
     for param, p_transform in zip(param_group['params'], param_group['p_transform']):
@@ -16,6 +17,7 @@ def importance_score_by_magnitude(param_group):
         else:
             norm_group += torch.norm(param_transform, dim=1) ** 2
     param_group['importance_scores']['magnitude'] = torch.sqrt(norm_group)
+
 
 def importance_score_by_avg_magnitude(param_group):
     norm_group = None
@@ -48,6 +50,7 @@ def importance_score_by_magnitude_lora(param_group):
         else:
             norm_group += torch.norm(param_transform, dim=1) ** 2
     param_group['importance_scores']['magnitude'] = torch.sqrt(norm_group)
+
 
 def importance_score_by_avg_magnitude_lora(param_group):
     norm_group = None

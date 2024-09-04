@@ -1,6 +1,7 @@
 import torch
 from torch import _C
 import numpy as np
+import inspect
 from packaging.version import Version
 from collections import defaultdict
 from only_train_once.operation import COMPOSED_MODULES, BASIC_MODULES, Operator, ParamOTO
@@ -72,11 +73,12 @@ class Graph:
         for t in FRAMEWORK_TRANSFORMS:
             t.apply(self)
 
+
     def build(self, model, dummy_input):
         print("graph build")
         trace_graph = self._get_trace_graph(model, dummy_input, optimized_onnx=self.trace_onnx)
         self._parse_modules(model)
-        
+
         # TODO: Should be better way to get the information of tensors from torch_graph
         self._parse_tensors_info(model.state_dict(), str(trace_graph))
 
@@ -88,6 +90,7 @@ class Graph:
             op_name = torch_node.kind().split("::")[-1].lower().replace('_', '')
             # Operation Parameters
             op_cfg_params = {k: getattr(torch_node, torch_node.kindOf(k))(k) for k in torch_node.attributeNames()}
+
             output_shape = _get_tensor_shape(str(torch_node).split(':')[1].strip())
 
             # Inputs/outputs
@@ -113,7 +116,7 @@ class Graph:
                                                        else self.params_no_grad[param_name]
             else:
                 op = Operator(_type=op_name, cfg_params=op_cfg_params)
-            
+
             # Note that op_name may not equals to op.id if belongs to the composed operator. 
             node = Node(id=self.torch_node_id(torch_node), op_name=op_name, op=op, inputs=inputs, outputs=outputs, param_names=param_names, output_shape=output_shape)
             if op.id in self.op_name_to_node_group_comp_op:
@@ -131,7 +134,6 @@ class Graph:
                 for target_torch_node in torch_nodes_by_outputs[input]:
                     self.add_edge_by_id(self.torch_node_id(target_torch_node), self.torch_node_id(torch_node))            
 
-        # exit()
         for op_id in self.op_name_to_node_group_comp_op:
             node_group = self.op_name_to_node_group_comp_op[op_id]
             self.node_groups[node_group.id] = node_group
@@ -419,7 +421,23 @@ class Graph:
         # Run the Pytorch graph to get a trace and generate a graph from it
         trace_graph = None
         with torch.no_grad():
-            trace_graph, _ = torch.jit._get_trace_graph(model, dummy_input)
+            if isinstance(dummy_input, dict):
+                forward_args = inspect.signature(model.forward).parameters.keys()
+                input_tensors = []
+                for argname in forward_args:
+                    if argname not in ['args', 'kwargs']:
+                        if argname in dummy_input:
+                            input_tensor = dummy_input[argname]
+                            input_tensors.append(input_tensor)
+                            # print(argname, input_tensor.shape)
+                        else:
+                            input_tensors.append(None)
+                input_tensors = tuple(input_tensors)
+            elif isinstance(dummy_input, torch.Tensor):
+                input_tensors = (dummy_input,)
+            else:
+                input_tensors = tuple(dummy_input)
+            trace_graph, _ = torch.jit._get_trace_graph(model, args=input_tensors)
             
         if not optimized_onnx:
             trace_graph = _optimize_trace_graph_no_onnx_operator(trace_graph, torch.onnx.OperatorExportTypes.ONNX)
@@ -527,18 +545,12 @@ class Graph:
                 self.inputs['node-' + str(i)] = (i, tensor_id, tensor_str_split)
                 cur_input += 1
             elif tensor_type == "params":
-                # self.param_id_to_name[tensor_id] = self.param_names[cur_param]
                 if tensor_id.isdigit():
                     self.param_id_to_name[int(tensor_id)] = self.param_names[cur_param]
                 else:
                     self.param_id_to_name[int(cur_param + 1)] = self.param_names[cur_param]
-                # if tensor_id.isdigit():
-                #     self.param_id_to_name[int(tensor_id)] = self.param_names[cur_param]
-                # else:
-                # #     self.param_id_to_name[int(cur_param)] = self.param_names[cur_param]
-                #     self.param_id_to_name[int(cur_param)] = self.param_names[cur_param]
                 cur_param += 1
-        
+
     def build_dot(self, vertical=False, by_node_groups=True, display_params=True, display_flops=True):
         """
         Generate a GraphViz Dot graph.
@@ -553,7 +565,7 @@ class Graph:
             flops_break_down = self.compute_flops(in_million=True)
 
         dot = Digraph()
-        
+
         dot.attr("graph", 
                 bgcolor=self.theme["background_color"],
                 color=self.theme["outline_color"],
@@ -708,7 +720,7 @@ class Graph:
             curr_group_sparsity = np.random.random() if target_group_sparsity is None else target_group_sparsity
             num_groups = param_group['num_groups']
             num_zero_groups = max(min(int(curr_group_sparsity * num_groups) // num_group_divisible * num_group_divisible, num_groups - 1), 0)
-            zero_group_idxes = np.random.choice(list(range(0, num_groups)), num_zero_groups, replace=False)
+            zero_group_idxes = np.random.choice(list(range(0, num_groups - 1)), num_zero_groups, replace=False)
             zero_group_idxes.sort()
 
             if len(param_group['params']) == 0:
@@ -747,10 +759,8 @@ class Graph:
 
             for ng_id, offset in param_group['auxiliary_ngs']:
                 aux_pg = self.node_groups[ng_id].get_param_groups()
-
                 for aux_p in aux_pg['params']:
                     aux_p.data[offset+zero_group_idxes, ...] = 0.0
-
 
     def set_pruning_redundant_idxes(self):
         for node_group in self.node_groups.values():
@@ -759,7 +769,8 @@ class Graph:
         for node_group in self.node_groups.values():
             if node_group.is_auxiliary:
                 node_group.set_pruning_redundant_idxes()
-        
+
+
     def skip_operators(self, operators=list()):
         '''
         Make the node groups contains target operator unprunable
@@ -777,7 +788,7 @@ class Graph:
                     if node.op._type in operators:
                         node_group.is_prunable = False
                         break
-    
+
     def set_trainable(self):
         self.set_param_grad_no_grad(self._model)
         for node_group in self.node_groups.values():
@@ -795,7 +806,8 @@ class Graph:
                     break
             if all_param_no_grad:
                 node_group.is_prunable = False
-    
+
+
     def set_param_grad_no_grad(self, model):
         self.params_grad = dict()
         self.params_no_grad = dict()
@@ -819,14 +831,6 @@ class Graph:
                     param_groups[node_group.id] = ng_param_group
 
         # Second pass for tackling auxliary node groups
-        # for node_group in self.node_groups.values():
-        #     if node_group.is_auxiliary and node_group.is_trainable:
-        #         offset = 0
-        #         for depend_ng in node_group.dependent_node_groups:
-        #             depend_ng_pg = param_groups[depend_ng.id]
-        #             depend_ng_pg['auxiliary_ngs'].append((node_group.id, offset))
-        #             offset += depend_ng.num_groups
-
         for node_group in self.node_groups.values():
             if hasattr(node_group, 'auxilary_node_groups'):
                 depend_ng_pg = param_groups[node_group.id]
