@@ -20,13 +20,13 @@ def automated_pruning_compression(oto_graph, model, merge_lora_to_base, unmerge_
         compressed_model_dir = os.path.join(compressed_model_dir, 'huggingface_format_compressed')
         full_group_sparse_model_path = full_group_sparse_model_dir
         compressed_model_path = compressed_model_dir
-        
+
     os.makedirs(full_group_sparse_model_dir, exist_ok=True)
     os.makedirs(compressed_model_dir, exist_ok=True)
-    
+
     if export_float16:
         model.half()
-    
+
     if save_full_group_sparse_model:
         if export_huggingface_format:
             model.save_pretrained(full_group_sparse_model_path)
@@ -58,12 +58,11 @@ def automated_pruning_compression(oto_graph, model, merge_lora_to_base, unmerge_
         for node_in in graph.incoming(node):
             if node_in.is_stem():
                 incoming_stem_node_ids.add(node_in)
-                return     
+                return
             if not visited[node_in.id]:                    
                 find_incoming_node_group_stem_node(graph, node_in, src_ng, visited, incoming_node_groups, incoming_stem_node_ids)
 
     pruned_in_dim_modules = set()
-
     for node_group in oto_graph.node_groups.values():
         for node in node_group.nodes.values():
             if node.pruned_status['in_dim']:

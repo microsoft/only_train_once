@@ -131,7 +131,8 @@ class NodeGroup(BasicNodeGroup):
         ng_param_group['op_names'] = list()
         ng_param_group['p_transform'] = list()
         ng_param_group['auxiliary_ngs'] = list()
-        
+        ng_param_group['node_ids'] = list()
+
         basic_attrs = ['op_names', 'p_names', 'params', 'p_transform']
         for node in self:
             if len(node.param_names) == 0 or not node.op:
@@ -141,14 +142,16 @@ class NodeGroup(BasicNodeGroup):
             ng_param_group['p_names'].extend(node_param_groups['p_names'])
             ng_param_group['params'].extend(node_param_groups['params'])
             ng_param_group['p_transform'].extend(node_param_groups['p_transform'])
+            ng_param_group['node_ids'].extend([node.id for _ in node_param_groups['p_names']])
             for attr in node_param_groups:
                 if attr not in basic_attrs:
                     ng_param_group[attr] = node_param_groups[attr]
-        
+        assert len(ng_param_group['params']) == len(ng_param_group['p_names'])
         for attr in self.extra_param_group_attrs:
             if attr not in ng_param_group:
                 ng_param_group[attr] = self.extra_param_group_attrs[attr]
         return ng_param_group
+
 
     def set_pruning_redundant_idxes(self):
         param_groups = self.get_param_groups()
@@ -172,7 +175,7 @@ class NodeGroup(BasicNodeGroup):
                         elif p_transform_type == TensorTransform.MULTIHEAD_HEADDIM:
                             param_transform = tensor_transformation(param_transform, p_transform_type, p_transform_config['head_dim'], p_transform_config['num_heads'])
                         else:
-                            param_transform = tensor_transformation(param_transform, p_transform, param_groups['num_groups'])
+                            param_transform = tensor_transformation(param_transform, p_transform_type, num_groups=p_transform_config['num_groups'])
                 else:
                     param_transform = tensor_transformation(param, p_transform, param_groups['num_groups'])
 
@@ -191,12 +194,24 @@ class NodeGroup(BasicNodeGroup):
 
             # TODO: index list transformation
             if hasattr(self, 'overwrite_p_transform'):
+                # if self.overwrite_p_transform == TensorTransform.MULTIHEAD_NUMHEAD_SPREAD and 'head_dim' in param_groups:
+                #     head_dim = param_groups['head_dim']
+                #     # head_dim = p_transform_config['head_dim'] 
+                #     refined_pruning_important_idxes = index_transformation(self.pruning_important_idxes, p_transform_type, head_dim=head_dim)
+                #     refined_pruning_redundant_idxes = index_transformation(self.pruning_redundant_idxes, p_transform_type, head_dim=head_dim)
+                #     self.pruning_important_idxes = np.array(refined_pruning_important_idxes)
+                #     self.pruning_redundant_idxes = np.array(refined_pruning_redundant_idxes)
                 if self.overwrite_p_transform == TensorTransform.MULTIHEAD_NUMHEAD_SPREAD and 'head_dim' in param_groups:
                     head_dim = param_groups['head_dim']
-                    head_dim = p_transform_config['head_dim'] 
-                    refined_pruning_important_idxes = index_transformation(self.pruning_important_idxes, p_transform_type, head_dim=head_dim)
-                    refined_pruning_redundant_idxes = index_transformation(self.pruning_redundant_idxes, p_transform_type, head_dim=head_dim)
+                    refined_pruning_important_idxes = list()
+                    refined_pruning_important_idxes = index_transformation(self.pruning_important_idxes, TensorTransform.MULTIHEAD_NUMHEAD, head_dim=head_dim)
+                    refined_pruning_redundant_idxes = index_transformation(self.pruning_redundant_idxes, TensorTransform.MULTIHEAD_NUMHEAD, head_dim=head_dim)
+                    # for i in self.pruning_important_idxes:
+                    #     refined_pruning_important_idxes.extend([h + i * head_dim for h in range(head_dim)])
                     self.pruning_important_idxes = np.array(refined_pruning_important_idxes)
+                    # refined_pruning_redundant_idxes = list()
+                    # for i in self.pruning_redundant_idxes:
+                    #     refined_pruning_redundant_idxes.extend([h + i * head_dim for h in range(head_dim)])
                     self.pruning_redundant_idxes = np.array(refined_pruning_redundant_idxes)
                 elif isinstance(self.overwrite_p_transform, list):
                     refined_pruning_important_idxes = [i for i in self.pruning_important_idxes]
@@ -222,7 +237,34 @@ class NodeGroup(BasicNodeGroup):
                     continue
                 pruning_redundant_idxes.append(dependent_node_group.pruning_redundant_idxes + offset)
                 offset += (dependent_node_group.pruning_important_idxes.size + dependent_node_group.pruning_redundant_idxes.size)
+            if len(pruning_redundant_idxes) > 0:
+                self.pruning_redundant_idxes = np.concatenate(pruning_redundant_idxes)
+            else:
+                self.pruning_redundant_idxes = list()
             self.pruning_important_idxes = list()
+
+        for (param, p_transform, node_id) in zip(param_groups['params'], param_groups['p_transform'], param_groups['node_ids']):
+            if p_transform == TensorTransform.NO_PRUNE:
+                continue
+            node = self.nodes[node_id]
+            if isinstance(p_transform, list):
+                refined_pruning_important_idxes = [i for i in self.pruning_important_idxes]
+                refined_pruning_redundant_idxes = [i for i in self.pruning_redundant_idxes]
+                for (p_transform_type, p_transform_config) in reversed(p_transform):
+                    if p_transform_type == TensorTransform.MULTIHEAD_HEADDIM:
+                        head_dim = p_transform_config['head_dim']
+                        num_heads = p_transform_config['num_heads']
+                        refined_pruning_important_idxes = index_transformation(refined_pruning_important_idxes, p_transform_type, num_heads=num_heads, head_dim=head_dim)
+                        refined_pruning_redundant_idxes = index_transformation(refined_pruning_redundant_idxes, p_transform_type, num_heads=num_heads, head_dim=head_dim)
+                    elif p_transform_type == TensorTransform.MULTIHEAD_NUMHEAD or p_transform_type == TensorTransform.MULTIHEAD_NUMHEAD_SPREAD:
+                        head_dim = p_transform_config['head_dim'] 
+                        refined_pruning_important_idxes = index_transformation(refined_pruning_important_idxes, p_transform_type, head_dim=head_dim)
+                        refined_pruning_redundant_idxes = index_transformation(refined_pruning_redundant_idxes, p_transform_type, head_dim=head_dim)
+                    node.pruning_important_idxes = np.array(refined_pruning_important_idxes)
+                    node.pruning_redundant_idxes = np.array(refined_pruning_redundant_idxes)
+            else:
+                node.pruning_important_idxes = self.pruning_important_idxes
+                node.pruning_redundant_idxes = self.pruning_redundant_idxes
 
     def prune_out_dim(self, global_skip_modules=set()):
         local_skip_modules=set()    
@@ -400,12 +442,24 @@ class NodeGroupComposedOp(BasicNodeGroup):
         elif len(param_groups['params']) > 0 and not self.is_auxiliary:
             norm_group = None
             for (p_name, param, p_transform) in zip(param_groups['p_names'], param_groups['params'], param_groups['p_transform']):
+                if p_transform == TensorTransform.NO_PRUNE:
+                    continue
                 # Skip lora_A or lora_embedding_A if any
                 if 'lora_A' in p_name or 'lora_embedding_A' in p_name:
                     continue
                 param_transform = None
                 if p_transform == TensorTransform.MULTIHEAD_HEADDIM:
                     param_transform = tensor_transformation(param, p_transform, param_groups['num_groups'], param_groups['num_heads'])
+                elif isinstance(p_transform, list):
+                    param_transform = param.data.clone() 
+                    for (p_transform_type, p_transform_config) in p_transform:
+                        if p_transform_type == TensorTransform.MULTIHEAD_HEADDIM:
+                            head_dim = p_transform_config['head_dim']
+                            num_heads = p_transform_config['num_heads']
+                            param_transform = tensor_transformation(param_transform, p_transform_type, num_heads=num_heads, num_groups=head_dim)
+                        elif p_transform_type == TensorTransform.MULTIHEAD_NUMHEAD or p_transform_type == TensorTransform.MULTIHEAD_NUMHEAD_SPREAD:
+                            num_heads = p_transform_config['num_heads']
+                            param_transform = tensor_transformation(param_transform, p_transform_type, num_groups=num_heads)
                 else:
                     param_transform = tensor_transformation(param, p_transform, param_groups['num_groups'])
 
@@ -415,10 +469,13 @@ class NodeGroupComposedOp(BasicNodeGroup):
                     norm_group += torch.norm(param_transform, dim=1) ** 2
             norm_group = torch.sqrt(norm_group)
             norm_group = norm_group.cpu()
+            if self.num_groups == 1:
+                self.pruning_important_idxes = np.arange(1)
+                self.pruning_redundant_idxes = []
+            else:
+                self.pruning_important_idxes = np.arange(self.num_groups)[norm_group != 0]
+                self.pruning_redundant_idxes = np.arange(self.num_groups)[norm_group == 0]
 
-            self.pruning_important_idxes = np.arange(self.num_groups)[norm_group != 0]
-            self.pruning_redundant_idxes = np.arange(self.num_groups)[norm_group == 0]
-                                        
     def prune_out_dim(self, **kwargs):
         if hasattr(self.op, 'prune_out_dim'):
             self.op.prune_out_dim(pruned_idxes=self.pruning_redundant_idxes, skip_output_node=True)

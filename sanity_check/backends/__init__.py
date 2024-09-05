@@ -14,7 +14,6 @@ from .demonet_groupnorm_case3 import DemoNetGroupNormCase3
 from .demonet_groupnorm_case4 import DemoNetGroupNormCase4
 from .densenet import densenet121, densenet161, densenet169, densenet201
 from .resnet_cifar10 import resnet18_cifar10
-from .demonet_batchnorm_pruning import DemonetBatchnormPruning
 from .carn.carn import CarnNet
 from .convnext import convnext_tiny, convnext_small, convnext_base, convnext_large, convnext_xlarge
 from .diffusion.diffusion import DiffModelCIFAR, DiffModelBedroom, DiffModelCeleba, DiffModelChurch

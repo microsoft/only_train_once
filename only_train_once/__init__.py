@@ -37,8 +37,8 @@ class OTO:
     def partition_pzigs(self):
         build_pruning_dependency_graph(self._graph)
 
-    def visualize(self, out_dir=None, view=False, vertical=True, by_node_groups=True, display_params=False):
-        self._graph.build_dot(vertical=vertical, by_node_groups=by_node_groups, display_params=display_params).render(\
+    def visualize(self, out_dir=None, view=False, vertical=True, by_node_groups=True, display_params=False, display_flops=False):
+        self._graph.build_dot(vertical=vertical, by_node_groups=by_node_groups, display_params=display_params, display_flops=display_flops).render(\
             os.path.join(out_dir if out_dir is not None else './', \
                 self._model.name if hasattr(self._model, 'name') else type(self._model).__name__ + '_pruning_dependency'), \
                 view=view)
