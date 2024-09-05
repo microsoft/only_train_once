@@ -16,6 +16,7 @@ Please find our series of works and [bibtexs](https://github.com/tianyic/only_tr
 - [An Adaptive Half-Space Projection Method for Stochastic Optimization Problems with Group Sparse Regularization](https://openreview.net/pdf?id=KBhSyBBeeO) in **TMLR 2023**.  
 - [OTOv2: Automatic, Generic, User-Friendly](https://openreview.net/pdf?id=7ynoX1ojPMt) in **ICLR 2023**.
 - [Only Train Once (OTO): A One-Shot Neural Network Training And Pruning Framework](https://papers.nips.cc/paper/2021/hash/a376033f78e144f494bfc743c0be3330-Abstract.html) in **NeurIPS 2021**.
+- [Hesso: A Hybrid Efficient Structured Sparse Optimizer For Automatic Any Structured Pruning](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) preprint coming soon
 
 ![oto_overview_2](https://github.com/tianyic/only_train_once/assets/8930611/ed1f8fda-d43c-4b60-a627-7ce9b2277848) 
 
@@ -106,7 +107,7 @@ The [`visual_examples`](./visual_examples) provides the visualization of pruning
 
 - Add more explanations into the current repository.
 
-- Release a technical report regarding the [HESSO](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) optimizer which is not discussed yet in our [papers](https://github.com/tianyic/only_train_once?tab=readme-ov-file#publications).
+- Release a technical report regarding the [HESSO](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) optimizer which is not discussed yet in our [papers](https://github.com/tianyic/only_train_once?tab=readme-ov-file#publications). (Coming Soon)
 
 - Release refactorized DHSPG and LHSPG.
 
