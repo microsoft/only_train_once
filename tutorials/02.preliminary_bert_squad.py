@@ -919,7 +919,15 @@ def main():
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
-
+            metrics = optimizer.compute_metrics()
+            print(f"Step: {step}, "
+                f"loss: {total_loss:.4f}, "
+                f"norm_all: {metrics.norm_params:.2f}, "
+                f"grp_sparsity: {metrics.group_sparsity:.2f}, "
+                f"norm_import: {metrics.norm_important_groups:.2f}, "
+                f"norm_redund: {metrics.norm_redundant_groups:.2f}, "
+                f"num_grp_import: {metrics.num_important_groups}, "
+                f"num_grp_redund: {metrics.num_redundant_groups}")
             # Checks if the accelerator has performed an optimization step behind the scenes
             if accelerator.sync_gradients:
                 progress_bar.update(1)
