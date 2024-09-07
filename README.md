@@ -12,7 +12,7 @@ This repository is the (official) Pytorch implementation of **Only-Train-Once** 
 ## Publications
 
 Please find our series of works and [bibtexs](https://github.com/tianyic/only_train_once?tab=readme-ov-file#citation) for kind citations. 
-- [Hesso: A Hybrid Efficient Structured Sparse Optimizer For Automatic Any Structured Pruning](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) preprint coming soon
+- [HESSO: A Hybrid Efficient Structured Sparse Optimizer For Automatic Any Structured Pruning](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) preprint coming soon
 - [OTOv3: Automatic Architecture-Agnostic Neural Network Training and Compression from Structured Pruning to Erasing Operators](https://arxiv.org/abs/2312.09411) preprint.
 - [LoRAShear: Efficient Large Language Model Structured Pruning and Knowledge Recovery](https://arxiv.org/abs/2310.18356) preprint. 
 - [An Adaptive Half-Space Projection Method for Stochastic Optimization Problems with Group Sparse Regularization](https://openreview.net/pdf?id=KBhSyBBeeO) in **TMLR 2023**.  
@@ -25,7 +25,7 @@ Please find our series of works and [bibtexs](https://github.com/tianyic/only_tr
 In addition, we recommend our following efficient ML works. 
 
 - [DREAM: Diffusion Rectification and Estimation-Adaptive Models](https://www.tianyuding.com/projects/DREAM/), efficient diffusion training, in **CVPR 2024**.
-- [DISTILLM: Towards Streamlined Distillation for Large Language Models](https://arxiv.org/pdf/2402.03898.pdf), LLM distillation, in **ICML 2024**.
+- [DistiLLM: Towards Streamlined Distillation for Large Language Models](https://github.com/jongwooko/distillm), LLM distillation, in **ICML 2024**.
 
 Thanks for the interest and support from our community. 
 
