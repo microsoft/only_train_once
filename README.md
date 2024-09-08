@@ -12,20 +12,20 @@ This repository is the (official) Pytorch implementation of **Only-Train-Once** 
 ## Publications
 
 Please find our series of works and [bibtexs](https://github.com/tianyic/only_train_once?tab=readme-ov-file#citation) for kind citations. 
-
+- [HESSO: A Hybrid Efficient Structured Sparse Optimizer For Automatic Any Structured Pruning](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) preprint coming soon
 - [OTOv3: Automatic Architecture-Agnostic Neural Network Training and Compression from Structured Pruning to Erasing Operators](https://arxiv.org/abs/2312.09411) preprint.
 - [LoRAShear: Efficient Large Language Model Structured Pruning and Knowledge Recovery](https://arxiv.org/abs/2310.18356) preprint. 
 - [An Adaptive Half-Space Projection Method for Stochastic Optimization Problems with Group Sparse Regularization](https://openreview.net/pdf?id=KBhSyBBeeO) in **TMLR 2023**.  
 - [OTOv2: Automatic, Generic, User-Friendly](https://openreview.net/pdf?id=7ynoX1ojPMt) in **ICLR 2023**.
 - [Only Train Once (OTO): A One-Shot Neural Network Training And Pruning Framework](https://papers.nips.cc/paper/2021/hash/a376033f78e144f494bfc743c0be3330-Abstract.html) in **NeurIPS 2021**.
-- [Hesso: A Hybrid Efficient Structured Sparse Optimizer For Automatic Any Structured Pruning](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) preprint coming soon
+
 
 ![oto_overview_2](https://github.com/tianyic/only_train_once/assets/8930611/ed1f8fda-d43c-4b60-a627-7ce9b2277848) 
 
 In addition, we recommend our following efficient ML works. 
 
 - [DREAM: Diffusion Rectification and Estimation-Adaptive Models](https://www.tianyuding.com/projects/DREAM/), efficient diffusion training, in **CVPR 2024**.
-- [DISTILLM: Towards Streamlined Distillation for Large Language Models](https://arxiv.org/pdf/2402.03898.pdf), LLM distillation, in **ICML 2024**.
+- [DistiLLM: Towards Streamlined Distillation for Large Language Models](https://github.com/jongwooko/distillm), LLM distillation, in **ICML 2024**.
 
 Thanks for the interest and support from our community. 
 
