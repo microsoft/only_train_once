@@ -12,7 +12,7 @@ This repository is the (official) Pytorch implementation of **Only-Train-Once** 
 ## Publications
 
 Please find our series of works and [bibtexs](https://github.com/tianyic/only_train_once?tab=readme-ov-file#citation) for kind citations. 
-- [HESSO: A Hybrid Efficient Structured Sparse Optimizer For Automatic Any Structured Pruning](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) preprint coming soon
+<!-- - [HESSO: A Hybrid Efficient Structured Sparse Optimizer For Automatic Any Structured Pruning](https://github.com/tianyic/only_train_once/blob/main/only_train_once/optimizer/hesso.py) preprint coming soon -->
 - [OTOv3: Automatic Architecture-Agnostic Neural Network Training and Compression from Structured Pruning to Erasing Operators](https://arxiv.org/abs/2312.09411) preprint.
 - [LoRAShear: Efficient Large Language Model Structured Pruning and Knowledge Recovery](https://arxiv.org/abs/2310.18356) preprint. 
 - [An Adaptive Half-Space Projection Method for Stochastic Optimization Problems with Group Sparse Regularization](https://openreview.net/pdf?id=KBhSyBBeeO) in **TMLR 2023**.  
